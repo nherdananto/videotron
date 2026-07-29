@@ -29,15 +29,40 @@ export default async function CampaignDetailPage({ params }: { params: Promise<{
   const protocol = process.env.NODE_ENV === "production" ? "https" : "http";
   const origin = `${protocol}://${host}`;
 
-  const [spinWheel, voting, polling] = await Promise.all([
+  const [spinWheel, voting, polling, quiz] = await Promise.all([
     buildGameLinks(origin, "spin-wheel", campaign.slug),
     buildGameLinks(origin, "voting", campaign.slug),
     buildGameLinks(origin, "polling", campaign.slug),
+    buildGameLinks(origin, "quiz", campaign.slug),
+  ]);
+
+  const [
+    participantCount,
+    spinCount,
+    spinWinCount,
+    voteCount,
+    pollAnswerCount,
+    quizAnswerCount,
+    quizCorrectCount,
+    quizPointsAgg,
+  ] = await Promise.all([
+    prisma.participant.count({ where: { campaignId: campaign.id } }),
+    prisma.spinResult.count({ where: { campaignId: campaign.id } }),
+    prisma.spinResult.count({ where: { campaignId: campaign.id, isWin: true } }),
+    prisma.voteEntry.count({ where: { votingQuestion: { campaignId: campaign.id } } }),
+    prisma.pollAnswer.count({ where: { pollQuestion: { pollSession: { campaignId: campaign.id } } } }),
+    prisma.quizAnswer.count({ where: { quizQuestion: { campaignId: campaign.id } } }),
+    prisma.quizAnswer.count({ where: { quizQuestion: { campaignId: campaign.id }, isCorrect: true } }),
+    prisma.quizAnswer.aggregate({
+      where: { quizQuestion: { campaignId: campaign.id } },
+      _sum: { pointsAwarded: true },
+    }),
   ]);
 
   const spinWheelGame = campaign.games.find((g) => g.gameType === "SPIN_WHEEL");
   const votingGame = campaign.games.find((g) => g.gameType === "VOTING");
   const pollingGame = campaign.games.find((g) => g.gameType === "POLLING");
+  const quizGame = campaign.games.find((g) => g.gameType === "QUIZ");
 
   return (
     <CampaignDetail
@@ -48,6 +73,7 @@ export default async function CampaignDetailPage({ params }: { params: Promise<{
         spinWheelActive: spinWheelGame?.isActive ?? false,
         votingActive: votingGame?.isActive ?? false,
         pollingActive: pollingGame?.isActive ?? false,
+        quizActive: quizGame?.isActive ?? false,
         prizes: campaign.spinPrizes.map((p) => ({
           id: p.id,
           label: p.label,
@@ -60,6 +86,17 @@ export default async function CampaignDetailPage({ params }: { params: Promise<{
       spinWheel={spinWheel}
       voting={voting}
       polling={polling}
+      quiz={quiz}
+      analytics={{
+        participantCount,
+        spinCount,
+        spinWinCount,
+        voteCount,
+        pollAnswerCount,
+        quizAnswerCount,
+        quizTotalPoints: quizPointsAgg._sum.pointsAwarded ?? 0,
+        quizAccuracy: quizAnswerCount > 0 ? quizCorrectCount / quizAnswerCount : null,
+      }}
     />
   );
 }

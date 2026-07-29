@@ -24,6 +24,7 @@ export const updateCampaignSchema = z.object({
   spinWheelActive: z.boolean().optional(),
   votingActive: z.boolean().optional(),
   pollingActive: z.boolean().optional(),
+  quizActive: z.boolean().optional(),
 });
 
 export const createPrizeSchema = z.object({
@@ -38,7 +39,7 @@ export const createPrizeSchema = z.object({
 export const updatePrizeSchema = createPrizeSchema.partial();
 
 export const joinCampaignSchema = z.object({
-  game: z.enum(["spin-wheel", "voting", "polling"]),
+  game: z.enum(["spin-wheel", "voting", "polling", "quiz"]),
   name: z.string().min(1).max(120),
   email: z.string().email().optional().nullable(),
   phone: z.string().min(6).max(20),
@@ -72,5 +73,25 @@ export const createPollSessionSchema = z.object({
 });
 
 export const setPollSessionActiveSchema = z.object({
+  isActive: z.boolean(),
+});
+
+export const createQuizQuestionSchema = z
+  .object({
+    question: z.string().min(3).max(200),
+    options: z
+      .array(z.object({ label: z.string().min(1).max(80), isCorrect: z.boolean() }))
+      .min(2)
+      .max(8),
+    points: z.number().int().min(1).max(10000).default(100),
+    difficulty: z.enum(["EASY", "MEDIUM", "HARD"]).default("MEDIUM"),
+    timerSeconds: z.number().int().min(5).max(300).default(20),
+  })
+  .refine((data) => data.options.some((o) => o.isCorrect), {
+    message: "Minimal satu opsi harus ditandai benar",
+    path: ["options"],
+  });
+
+export const setQuizQuestionActiveSchema = z.object({
   isActive: z.boolean(),
 });

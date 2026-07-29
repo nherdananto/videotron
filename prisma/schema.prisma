@@ -33,6 +33,12 @@ enum PrizeType {
   NO_PRIZE
 }
 
+enum QuizDifficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
 model Campaign {
   id        String         @id @default(cuid())
   slug      String         @unique
@@ -51,6 +57,7 @@ model Campaign {
   spinResults     SpinResult[]
   votingQuestions VotingQuestion[]
   pollSessions    PollSession[]
+  quizQuestions   QuizQuestion[]
 }
 
 // Which games are enabled for a campaign, and their per-game config (CMS: "pilih game yang akan dipasang").
@@ -79,6 +86,7 @@ model Participant {
   spinResults SpinResult[]
   voteEntries VoteEntry[]
   pollAnswers PollAnswer[]
+  quizAnswers QuizAnswer[]
 
   @@unique([campaignId, phone])
   @@index([campaignId])
@@ -213,4 +221,55 @@ model PollAnswer {
   createdAt      DateTime     @default(now())
 
   @@unique([pollQuestionId, participantId])
+}
+
+// The question bank ("Bank soal"). Only one question per campaign is isActive
+// ("on air") at a time; activatedAt anchors the countdown so every client
+// (videotron + all mobiles) computes the exact same deadline.
+model QuizQuestion {
+  id           String         @id @default(cuid())
+  campaignId   String
+  campaign     Campaign       @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  question     String
+  points       Int            @default(100)
+  difficulty   QuizDifficulty @default(MEDIUM)
+  timerSeconds Int            @default(20)
+  isActive     Boolean        @default(false)
+  activatedAt  DateTime?
+  createdAt    DateTime       @default(now())
+
+  options QuizOption[]
+  answers QuizAnswer[]
+
+  @@index([campaignId])
+}
+
+model QuizOption {
+  id             String       @id @default(cuid())
+  quizQuestionId String
+  quizQuestion   QuizQuestion @relation(fields: [quizQuestionId], references: [id], onDelete: Cascade)
+  label          String
+  isCorrect      Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+
+  answers QuizAnswer[]
+
+  @@index([quizQuestionId])
+}
+
+// One answer per participant per question. pointsAwarded is stamped at grading
+// time (0 if wrong) so the leaderboard is a simple sum, not a live re-grade.
+model QuizAnswer {
+  id             String       @id @default(cuid())
+  quizQuestionId String
+  quizQuestion   QuizQuestion @relation(fields: [quizQuestionId], references: [id], onDelete: Cascade)
+  quizOptionId   String
+  quizOption     QuizOption   @relation(fields: [quizOptionId], references: [id], onDelete: Cascade)
+  participantId  String
+  participant    Participant  @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  isCorrect      Boolean
+  pointsAwarded  Int
+  createdAt      DateTime     @default(now())
+
+  @@unique([quizQuestionId, participantId])
 }

@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { GameActivationCard } from "./GameActivationCard";
 import { VotingManager } from "./VotingManager";
 import { PollingManager } from "./PollingManager";
+import { QuizManager } from "./QuizManager";
+import { AnalyticsSummary } from "./AnalyticsSummary";
 
 type Prize = {
   id: string;
@@ -22,10 +24,22 @@ type Campaign = {
   spinWheelActive: boolean;
   votingActive: boolean;
   pollingActive: boolean;
+  quizActive: boolean;
   prizes: Prize[];
 };
 
 type GameLinks = { joinUrl: string; videotronUrl: string; qrDataUrl: string };
+
+type Analytics = {
+  participantCount: number;
+  spinCount: number;
+  spinWinCount: number;
+  voteCount: number;
+  pollAnswerCount: number;
+  quizAnswerCount: number;
+  quizTotalPoints: number;
+  quizAccuracy: number | null;
+};
 
 type Result = {
   id: string;
@@ -43,11 +57,15 @@ export function CampaignDetail({
   spinWheel,
   voting,
   polling,
+  quiz,
+  analytics,
 }: {
   campaign: Campaign;
   spinWheel: GameLinks;
   voting: GameLinks;
   polling: GameLinks;
+  quiz: GameLinks;
+  analytics: Analytics;
 }) {
   const router = useRouter();
   const [results, setResults] = useState<Result[]>([]);
@@ -126,6 +144,10 @@ export function CampaignDetail({
 
       {error && <p className="mb-4 text-sm text-red-400">{error}</p>}
 
+      <div className="mb-8">
+        <AnalyticsSummary analytics={analytics} />
+      </div>
+
       <div className="mb-8 flex flex-col gap-4">
         <GameActivationCard
           gameLabel="Spin Wheel"
@@ -150,6 +172,14 @@ export function CampaignDetail({
           joinUrl={polling.joinUrl}
           videotronUrl={polling.videotronUrl}
           qrDataUrl={polling.qrDataUrl}
+        />
+        <GameActivationCard
+          gameLabel="Quiz"
+          isActive={campaign.quizActive}
+          onToggle={(checked) => patchCampaign({ quizActive: checked })}
+          joinUrl={quiz.joinUrl}
+          videotronUrl={quiz.videotronUrl}
+          qrDataUrl={quiz.qrDataUrl}
         />
       </div>
 
@@ -228,6 +258,10 @@ export function CampaignDetail({
 
       <div className="mb-8">
         <PollingManager slug={campaign.slug} />
+      </div>
+
+      <div className="mb-8">
+        <QuizManager slug={campaign.slug} />
       </div>
 
       <section>

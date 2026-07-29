@@ -1,5 +1,5 @@
 import type { Prisma, SpinPrize } from "@prisma/client";
-import { prisma } from "../lib/prisma.js";
+import { prisma } from "@/lib/prisma";
 
 export class SpinEngineError extends Error {}
 

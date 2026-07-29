@@ -1,5 +1,5 @@
 import type { Server } from "socket.io";
-import type { ClientToServerEvents, ServerToClientEvents } from "../types/socket.js";
+import type { ClientToServerEvents, ServerToClientEvents } from "@/types/socket";
 
 type AppIO = Server<ClientToServerEvents, ServerToClientEvents>;
 

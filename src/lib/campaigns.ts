@@ -75,6 +75,43 @@ export async function getPublicPollingCampaign(slug: string) {
   };
 }
 
+export async function getPublicQuizCampaign(slug: string) {
+  const campaign = await prisma.campaign.findUnique({
+    where: { slug },
+    include: {
+      games: { where: { gameType: "QUIZ" } },
+      quizQuestions: {
+        where: { isActive: true },
+        include: { options: { orderBy: { createdAt: "asc" }, select: { id: true, label: true } } },
+        take: 1,
+      },
+    },
+  });
+  if (!campaign) return null;
+
+  const now = new Date();
+  const withinSchedule = (!campaign.startAt || now >= campaign.startAt) && (!campaign.endAt || now <= campaign.endAt);
+  const activeQuestion = campaign.quizQuestions[0] ?? null;
+
+  return {
+    slug: campaign.slug,
+    name: campaign.name,
+    status: campaign.status,
+    isOpenForPlay: campaign.status === "ACTIVE" && withinSchedule && (campaign.games[0]?.isActive ?? false),
+    question: activeQuestion
+      ? {
+          id: activeQuestion.id,
+          text: activeQuestion.question,
+          points: activeQuestion.points,
+          difficulty: activeQuestion.difficulty,
+          timerSeconds: activeQuestion.timerSeconds,
+          activatedAt: activeQuestion.activatedAt?.toISOString() ?? null,
+          options: activeQuestion.options,
+        }
+      : null,
+  };
+}
+
 export async function getPublicSpinWheelCampaign(slug: string) {
   const campaign = await prisma.campaign.findUnique({
     where: { slug },

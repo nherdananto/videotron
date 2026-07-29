@@ -13,12 +13,12 @@ exhibition, kampus, promosi, dan aktivitas pemasaran.
 
 ## Routing
 
-- `/{namagame}/{campaignId}` — tampilan Videotron (mis. `/spin-wheel/abc12345`, `/voting/abc12345`, `/polling/abc12345`)
+- `/{namagame}/{campaignId}` — tampilan Videotron (mis. `/spin-wheel/abc12345`, `/voting/abc12345`, `/polling/abc12345`, `/quiz/abc12345`)
 - `/{namagame}/join/{campaignId}` — tampilan mobile untuk visitor (mis. `/spin-wheel/join/abc12345`)
-- `/cms` — dashboard CMS (buat campaign, kelola hadiah/voting/polling, pantau hasil live, QR join)
+- `/cms` — dashboard CMS (buat campaign, kelola hadiah/voting/polling/quiz, analytics, pantau hasil live, QR join)
 
-Saat ini `spin-wheel`, `voting`, dan `polling` yang terimplementasi; slug game lain akan menampilkan
-halaman "belum tersedia".
+Saat ini `spin-wheel`, `voting`, `polling`, dan `quiz` yang terimplementasi; slug game lain akan
+menampilkan halaman "belum tersedia".
 
 ## Getting Started
 
@@ -49,10 +49,20 @@ SQLite disimpan di named volume `videotron-db` agar persist antar restart. Untuk
 ## Known Gaps (belum diimplementasi)
 
 - Autentikasi & RBAC untuk CMS (saat ini `/cms` open access)
-- Quiz, Tic Tac Toe, Racing, Instagram Wall (Fase berikutnya sesuai roadmap)
-- Analytics dashboard, Audit Log, rate limiting
+- Tic Tac Toe, Racing, Instagram Wall (Fase berikutnya sesuai roadmap)
+- Audit Log, rate limiting
 
 ## Changelog
+
+### 0.4.0 — 2026-07-29
+
+- feat: Quiz Berhadiah end-to-end (Game 4) — bank soal dengan point/tingkat kesulitan/timer per soal,
+  satu soal on-air per campaign, countdown tersinkron di videotron & HP lewat `activatedAt`, penilaian
+  jawaban otomatis, leaderboard Top 10 real-time (Hari Ini/Minggu Ini/Bulan Ini)
+- feat: Analytics summary di CMS — ringkasan peserta, spin, vote, jawaban polling, dan skor quiz
+- fix: unifikasi import server-side (`server.ts`, `src/server/*`) ke alias `@/*` — sebelumnya memakai
+  import relatif ber-`.js` yang gagal di-bundle Turbopack begitu sebuah engine file (quizEngine)
+  perlu diimpor langsung oleh sebuah API route
 
 ### 0.3.0 — 2026-07-29
 

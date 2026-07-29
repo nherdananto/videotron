@@ -24,6 +24,19 @@ export interface PollTallyPayload {
   totalVotes: number;
 }
 
+export interface QuizTallyPayload {
+  quizQuestionId: string;
+  question: string;
+  options: { id: string; label: string; count: number }[];
+  totalAnswers: number;
+}
+
+export interface LeaderboardEntryPayload {
+  participantId: string;
+  name: string;
+  points: number;
+}
+
 export interface ServerToClientEvents {
   "participant:count": (payload: { campaignId: string; count: number }) => void;
   "spin:result": (payload: SpinResultPayload) => void;
@@ -35,6 +48,16 @@ export interface ServerToClientEvents {
   "polling:update": (payload: PollTallyPayload) => void;
   "poll:accepted": (payload: { pollQuestionId: string; pollOptionId: string; participantId: string }) => void;
   "poll:error": (payload: { message: string }) => void;
+  "quiz:update": (payload: QuizTallyPayload) => void;
+  "quiz:accepted": (payload: {
+    quizQuestionId: string;
+    quizOptionId: string;
+    participantId: string;
+    isCorrect: boolean;
+    pointsAwarded: number;
+  }) => void;
+  "quiz:error": (payload: { message: string }) => void;
+  "quiz:leaderboard": (payload: { period: "today"; entries: LeaderboardEntryPayload[] }) => void;
 }
 
 export interface ClientToServerEvents {
@@ -42,4 +65,5 @@ export interface ClientToServerEvents {
   "spin:request": (payload: { campaignId: string; sessionToken: string }) => void;
   "vote:cast": (payload: { campaignId: string; sessionToken: string; votingOptionId: string }) => void;
   "poll:answer": (payload: { campaignId: string; sessionToken: string; pollOptionId: string }) => void;
+  "quiz:answer": (payload: { campaignId: string; sessionToken: string; quizOptionId: string }) => void;
 }

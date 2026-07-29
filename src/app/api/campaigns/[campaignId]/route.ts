@@ -32,17 +32,18 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     return NextResponse.json({ error: "Campaign tidak ditemukan" }, { status: 404 });
   }
 
-  const { spinWheelActive, votingActive, pollingActive, ...campaignFields } = parsed.data;
+  const { spinWheelActive, votingActive, pollingActive, quizActive, ...campaignFields } = parsed.data;
 
   await prisma.campaign.update({
     where: { slug: campaignId },
     data: campaignFields,
   });
 
-  const gameActivations: { gameType: "SPIN_WHEEL" | "VOTING" | "POLLING"; isActive?: boolean }[] = [
+  const gameActivations: { gameType: "SPIN_WHEEL" | "VOTING" | "POLLING" | "QUIZ"; isActive?: boolean }[] = [
     { gameType: "SPIN_WHEEL", isActive: spinWheelActive },
     { gameType: "VOTING", isActive: votingActive },
     { gameType: "POLLING", isActive: pollingActive },
+    { gameType: "QUIZ", isActive: quizActive },
   ];
   for (const { gameType, isActive } of gameActivations) {
     if (isActive === undefined) continue;

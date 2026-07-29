@@ -72,24 +72,42 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     });
   }
 
-  // game === "polling"
-  const activeSession = await prisma.pollSession.findFirst({
+  if (parsed.data.game === "polling") {
+    const activeSession = await prisma.pollSession.findFirst({
+      where: { campaignId: campaign.id, isActive: true },
+      include: { questions: { orderBy: { order: "asc" } } },
+    });
+    const answers = activeSession
+      ? await prisma.pollAnswer.findMany({
+          where: {
+            participantId: participant.id,
+            pollQuestionId: { in: activeSession.questions.map((q) => q.id) },
+          },
+        })
+      : [];
+
+    return NextResponse.json({
+      sessionToken: participant.sessionToken,
+      participantId: participant.id,
+      activeSessionId: activeSession?.id ?? null,
+      answers: answers.map((a) => ({ pollQuestionId: a.pollQuestionId, pollOptionId: a.pollOptionId })),
+    });
+  }
+
+  // game === "quiz"
+  const activeQuestion = await prisma.quizQuestion.findFirst({
     where: { campaignId: campaign.id, isActive: true },
-    include: { questions: { orderBy: { order: "asc" } } },
   });
-  const answers = activeSession
-    ? await prisma.pollAnswer.findMany({
-        where: {
-          participantId: participant.id,
-          pollQuestionId: { in: activeSession.questions.map((q) => q.id) },
-        },
+  const existingAnswer = activeQuestion
+    ? await prisma.quizAnswer.findUnique({
+        where: { quizQuestionId_participantId: { quizQuestionId: activeQuestion.id, participantId: participant.id } },
       })
-    : [];
+    : null;
 
   return NextResponse.json({
     sessionToken: participant.sessionToken,
     participantId: participant.id,
-    activeSessionId: activeSession?.id ?? null,
-    answers: answers.map((a) => ({ pollQuestionId: a.pollQuestionId, pollOptionId: a.pollOptionId })),
+    activeQuestionId: activeQuestion?.id ?? null,
+    answeredOptionId: existingAnswer?.quizOptionId ?? null,
   });
 }

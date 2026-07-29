@@ -1,10 +1,11 @@
 import type { Server, Socket } from "socket.io";
-import type { ClientToServerEvents, ServerToClientEvents } from "../types/socket.js";
-import { campaignRoomName } from "../lib/games.js";
-import { spin, SpinEngineError } from "./spinEngine.js";
-import { castVote, VotingEngineError } from "./votingEngine.js";
-import { answerPoll, PollEngineError } from "./pollEngine.js";
-import { prisma } from "../lib/prisma.js";
+import type { ClientToServerEvents, ServerToClientEvents } from "@/types/socket";
+import { campaignRoomName } from "@/lib/games";
+import { spin, SpinEngineError } from "@/server/spinEngine";
+import { castVote, VotingEngineError } from "@/server/votingEngine";
+import { answerPoll, PollEngineError } from "@/server/pollEngine";
+import { answerQuiz, getLeaderboard, QuizEngineError } from "@/server/quizEngine";
+import { prisma } from "@/lib/prisma";
 
 type AppServer = Server<ClientToServerEvents, ServerToClientEvents>;
 type AppSocket = Socket<ClientToServerEvents, ServerToClientEvents>;
@@ -86,6 +87,32 @@ export function registerSocketHandlers(io: AppServer) {
       } catch (error) {
         const message = error instanceof PollEngineError ? error.message : "Terjadi kesalahan saat mengirim jawaban";
         socket.emit("poll:error", { message });
+      }
+    });
+
+    socket.on("quiz:answer", async ({ campaignId: campaignSlug, sessionToken, quizOptionId }) => {
+      try {
+        const campaign = await prisma.campaign.findUnique({ where: { slug: campaignSlug } });
+        const participant = await prisma.participant.findUnique({ where: { sessionToken } });
+        if (!campaign || !participant || participant.campaignId !== campaign.id) {
+          socket.emit("quiz:error", { message: "Sesi tidak valid untuk campaign ini" });
+          return;
+        }
+        const { tally, isCorrect, pointsAwarded } = await answerQuiz(campaign.id, participant.id, quizOptionId);
+        socket.emit("quiz:accepted", {
+          quizQuestionId: tally.quizQuestionId,
+          quizOptionId,
+          participantId: participant.id,
+          isCorrect,
+          pointsAwarded,
+        });
+        const room = campaignRoomName(campaignSlug);
+        io.to(room).emit("quiz:update", tally);
+        const entries = await getLeaderboard(campaign.id, "today");
+        io.to(room).emit("quiz:leaderboard", { period: "today", entries });
+      } catch (error) {
+        const message = error instanceof QuizEngineError ? error.message : "Terjadi kesalahan saat mengirim jawaban";
+        socket.emit("quiz:error", { message });
       }
     });
 
