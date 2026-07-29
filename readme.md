@@ -46,13 +46,21 @@ real-time lewat Socket.io.
 docker compose up --build
 ```
 
-Menjalankan `prisma migrate deploy` otomatis saat container start, lalu serve di port 3000. Database
-SQLite disimpan di named volume `videotron-db` agar persist antar restart. Untuk PostgreSQL, ganti
-`provider` di `prisma/schema.prisma` ke `postgresql` dan set `DATABASE_URL` sesuai.
+Menjalankan `prisma migrate deploy` lalu `npm run db:seed` (idempotent — membuat admin pertama bila
+belum ada) otomatis saat container start, lalu serve di port 3000. Database SQLite disimpan di named
+volume `videotron-db` agar persist antar restart. Untuk PostgreSQL, ganti `provider` di
+`prisma/schema.prisma` ke `postgresql` dan set `DATABASE_URL` sesuai.
 
 > Catatan: Dockerfile/compose ini belum di-build-test di environment pengembangan (tidak ada Docker
 > daemon tersedia saat dibuat) — jalankan `docker compose up --build` secara lokal untuk verifikasi
 > sebelum dipakai untuk deployment.
+
+## Deployment
+
+Lihat **[DEPLOYMENT.md](./DEPLOYMENT.md)** untuk panduan lengkap: kenapa ini bukan app serverless,
+setup reverse proxy/TLS untuk WebSocket, strategi backup database, checklist post-deploy, dan
+keterbatasan operasional yang perlu diketahui sebelum production (belum ada rate limiting, belum
+ada flow ganti password CMS).
 
 ## CMS Roles
 
@@ -67,6 +75,16 @@ SQLite disimpan di named volume `videotron-db` agar persist antar restart. Untuk
 - Audit Log, rate limiting
 
 ## Changelog
+
+### 0.6.1 — 2026-07-29
+
+- docs: `DEPLOYMENT.md` — panduan deployment lengkap (kenapa bukan serverless, single-instance
+  only untuk saat ini, reverse proxy/TLS dengan WebSocket upgrade, backup SQLite/migrasi ke
+  PostgreSQL, checklist post-deploy, keterbatasan operasional)
+- fix: `docker-entrypoint.sh` sekarang juga menjalankan `npm run db:seed` (idempotent) setelah
+  migrate — sebelumnya admin pertama harus dibuat manual lewat `docker compose exec`
+- fix: `docker-compose.yml` meneruskan `AUTH_SECRET`/`ADMIN_EMAIL`/`ADMIN_PASSWORD`/`ADMIN_NAME`
+  ke container (sebelumnya tidak ada sama sekali, sehingga CMS login akan gagal di Docker)
 
 ### 0.6.0 — 2026-07-29
 
