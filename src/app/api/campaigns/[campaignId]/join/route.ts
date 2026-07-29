@@ -2,12 +2,20 @@ import { NextRequest, NextResponse } from "next/server";
 import { nanoid } from "nanoid";
 import { prisma } from "@/lib/prisma";
 import { joinCampaignSchema } from "@/lib/validation";
+import { GAME_SLUGS } from "@/lib/games";
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ campaignId: string }> }) {
   const { campaignId } = await params;
+  const body = await request.json();
+  const parsed = joinCampaignSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+  }
+
+  const gameType = GAME_SLUGS[parsed.data.game];
   const campaign = await prisma.campaign.findUnique({
     where: { slug: campaignId },
-    include: { games: { where: { gameType: "SPIN_WHEEL" } } },
+    include: { games: { where: { gameType } } },
   });
   if (!campaign) {
     return NextResponse.json({ error: "Campaign tidak ditemukan" }, { status: 404 });
@@ -17,12 +25,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const withinSchedule = (!campaign.startAt || now >= campaign.startAt) && (!campaign.endAt || now <= campaign.endAt);
   if (campaign.status !== "ACTIVE" || !withinSchedule || !campaign.games[0]?.isActive) {
     return NextResponse.json({ error: "Campaign belum aktif atau sudah berakhir" }, { status: 403 });
-  }
-
-  const body = await request.json();
-  const parsed = joinCampaignSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
   let participant = await prisma.participant.findUnique({
@@ -41,13 +43,31 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     });
   }
 
-  const existingSpin = await prisma.spinResult.findUnique({
-    where: { campaignId_participantId: { campaignId: campaign.id, participantId: participant.id } },
+  if (parsed.data.game === "spin-wheel") {
+    const existingSpin = await prisma.spinResult.findUnique({
+      where: { campaignId_participantId: { campaignId: campaign.id, participantId: participant.id } },
+    });
+    return NextResponse.json({
+      sessionToken: participant.sessionToken,
+      participantId: participant.id,
+      hasPlayed: Boolean(existingSpin),
+    });
+  }
+
+  // game === "voting"
+  const activeQuestion = await prisma.votingQuestion.findFirst({
+    where: { campaignId: campaign.id, isActive: true },
   });
+  const existingVote = activeQuestion
+    ? await prisma.voteEntry.findUnique({
+        where: { votingQuestionId_participantId: { votingQuestionId: activeQuestion.id, participantId: participant.id } },
+      })
+    : null;
 
   return NextResponse.json({
     sessionToken: participant.sessionToken,
     participantId: participant.id,
-    hasPlayed: Boolean(existingSpin),
+    activeQuestionId: activeQuestion?.id ?? null,
+    votedOptionId: existingVote?.votingOptionId ?? null,
   });
 }

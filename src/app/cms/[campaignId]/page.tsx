@@ -21,11 +21,17 @@ export default async function CampaignDetailPage({ params }: { params: Promise<{
   const host = headerList.get("host");
   const protocol = process.env.NODE_ENV === "production" ? "https" : "http";
   const origin = `${protocol}://${host}`;
-  const joinUrl = `${origin}/spin-wheel/join/${campaign.slug}`;
-  const videotronUrl = `${origin}/spin-wheel/${campaign.slug}`;
-  const qrDataUrl = await QRCode.toDataURL(joinUrl, { margin: 1, width: 240 });
+
+  const spinWheelJoinUrl = `${origin}/spin-wheel/join/${campaign.slug}`;
+  const spinWheelVideotronUrl = `${origin}/spin-wheel/${campaign.slug}`;
+  const spinWheelQrDataUrl = await QRCode.toDataURL(spinWheelJoinUrl, { margin: 1, width: 240 });
+
+  const votingJoinUrl = `${origin}/voting/join/${campaign.slug}`;
+  const votingVideotronUrl = `${origin}/voting/${campaign.slug}`;
+  const votingQrDataUrl = await QRCode.toDataURL(votingJoinUrl, { margin: 1, width: 240 });
 
   const spinWheelGame = campaign.games.find((g) => g.gameType === "SPIN_WHEEL");
+  const votingGame = campaign.games.find((g) => g.gameType === "VOTING");
 
   return (
     <CampaignDetail
@@ -34,6 +40,7 @@ export default async function CampaignDetailPage({ params }: { params: Promise<{
         name: campaign.name,
         status: campaign.status,
         spinWheelActive: spinWheelGame?.isActive ?? false,
+        votingActive: votingGame?.isActive ?? false,
         prizes: campaign.spinPrizes.map((p) => ({
           id: p.id,
           label: p.label,
@@ -43,9 +50,8 @@ export default async function CampaignDetailPage({ params }: { params: Promise<{
           quotaRemaining: p.quotaRemaining,
         })),
       }}
-      joinUrl={joinUrl}
-      videotronUrl={videotronUrl}
-      qrDataUrl={qrDataUrl}
+      spinWheel={{ joinUrl: spinWheelJoinUrl, videotronUrl: spinWheelVideotronUrl, qrDataUrl: spinWheelQrDataUrl }}
+      voting={{ joinUrl: votingJoinUrl, videotronUrl: votingVideotronUrl, qrDataUrl: votingQrDataUrl }}
     />
   );
 }

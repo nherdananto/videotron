@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { GameActivationCard } from "./GameActivationCard";
+import { VotingManager } from "./VotingManager";
 
 type Prize = {
   id: string;
@@ -17,8 +19,11 @@ type Campaign = {
   name: string;
   status: "DRAFT" | "ACTIVE" | "ENDED";
   spinWheelActive: boolean;
+  votingActive: boolean;
   prizes: Prize[];
 };
+
+type GameLinks = { joinUrl: string; videotronUrl: string; qrDataUrl: string };
 
 type Result = {
   id: string;
@@ -33,14 +38,12 @@ const PRIZE_TYPES = ["VOUCHER", "DISKON", "MERCHANDISE", "KUPON_BELANJA", "LUCKY
 
 export function CampaignDetail({
   campaign,
-  joinUrl,
-  videotronUrl,
-  qrDataUrl,
+  spinWheel,
+  voting,
 }: {
   campaign: Campaign;
-  joinUrl: string;
-  videotronUrl: string;
-  qrDataUrl: string;
+  spinWheel: GameLinks;
+  voting: GameLinks;
 }) {
   const router = useRouter();
   const [results, setResults] = useState<Result[]>([]);
@@ -119,29 +122,24 @@ export function CampaignDetail({
 
       {error && <p className="mb-4 text-sm text-red-400">{error}</p>}
 
-      <section className="mb-8 flex flex-wrap items-center gap-6 rounded-lg bg-slate-900 p-4">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={qrDataUrl} alt="QR join" className="h-32 w-32 rounded-md bg-white p-1" />
-        <div className="flex flex-col gap-2 text-sm">
-          <p>
-            Join URL: <a className="text-indigo-400 underline" href={joinUrl} target="_blank" rel="noreferrer">{joinUrl}</a>
-          </p>
-          <p>
-            Videotron URL:{" "}
-            <a className="text-indigo-400 underline" href={videotronUrl} target="_blank" rel="noreferrer">
-              {videotronUrl}
-            </a>
-          </p>
-          <label className="mt-2 flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={campaign.spinWheelActive}
-              onChange={(e) => patchCampaign({ spinWheelActive: e.target.checked })}
-            />
-            Spin Wheel aktif untuk peserta
-          </label>
-        </div>
-      </section>
+      <div className="mb-8 flex flex-col gap-4">
+        <GameActivationCard
+          gameLabel="Spin Wheel"
+          isActive={campaign.spinWheelActive}
+          onToggle={(checked) => patchCampaign({ spinWheelActive: checked })}
+          joinUrl={spinWheel.joinUrl}
+          videotronUrl={spinWheel.videotronUrl}
+          qrDataUrl={spinWheel.qrDataUrl}
+        />
+        <GameActivationCard
+          gameLabel="Voting"
+          isActive={campaign.votingActive}
+          onToggle={(checked) => patchCampaign({ votingActive: checked })}
+          joinUrl={voting.joinUrl}
+          videotronUrl={voting.videotronUrl}
+          qrDataUrl={voting.qrDataUrl}
+        />
+      </div>
 
       <section className="mb-8">
         <h2 className="mb-3 text-lg font-semibold">Hadiah</h2>
@@ -211,6 +209,10 @@ export function CampaignDetail({
           </button>
         </form>
       </section>
+
+      <div className="mb-8">
+        <VotingManager slug={campaign.slug} />
+      </div>
 
       <section>
         <h2 className="mb-3 text-lg font-semibold">Riwayat Pemenang</h2>

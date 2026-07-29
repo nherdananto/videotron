@@ -9,6 +9,8 @@ smartphone, QR Code, CMS, dan Videotron dalam satu ekosistem real-time
 untuk meningkatkan engagement pengunjung pada event, mall, exhibition,
 kampus, promosi, dan aktivitas pemasaran.
 
+build as docker, so easier to deploy.
+
 # 3. Tujuan Produk
 - Meningkatkan engagement pengunjung.
 - Mengumpulkan database pelanggan.

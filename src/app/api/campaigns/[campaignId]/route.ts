@@ -1,15 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { updateCampaignSchema } from "@/lib/validation";
-import { campaignRoomName } from "@/lib/games";
-
-function notifyCampaignUpdated(campaignId: string) {
-  import("@/server/ioSingleton")
-    .then(({ getIO }) => getIO().to(campaignRoomName(campaignId)).emit("campaign:updated", { campaignId }))
-    .catch(() => {
-      // Socket server not initialized (e.g. during build) — safe to ignore.
-    });
-}
+import { notifyCampaignUpdated } from "@/lib/realtime";
 
 export async function GET(_request: NextRequest, { params }: { params: Promise<{ campaignId: string }> }) {
   const { campaignId } = await params;
@@ -40,7 +32,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     return NextResponse.json({ error: "Campaign tidak ditemukan" }, { status: 404 });
   }
 
-  const { spinWheelActive, ...campaignFields } = parsed.data;
+  const { spinWheelActive, votingActive, ...campaignFields } = parsed.data;
 
   await prisma.campaign.update({
     where: { slug: campaignId },
@@ -48,9 +40,17 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   });
 
   if (spinWheelActive !== undefined) {
-    await prisma.campaignGame.update({
+    await prisma.campaignGame.upsert({
       where: { campaignId_gameType: { campaignId: existing.id, gameType: "SPIN_WHEEL" } },
-      data: { isActive: spinWheelActive },
+      update: { isActive: spinWheelActive },
+      create: { campaignId: existing.id, gameType: "SPIN_WHEEL", isActive: spinWheelActive },
+    });
+  }
+  if (votingActive !== undefined) {
+    await prisma.campaignGame.upsert({
+      where: { campaignId_gameType: { campaignId: existing.id, gameType: "VOTING" } },
+      update: { isActive: votingActive },
+      create: { campaignId: existing.id, gameType: "VOTING", isActive: votingActive },
     });
   }
 

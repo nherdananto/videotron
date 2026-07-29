@@ -45,10 +45,11 @@ model Campaign {
   createdAt DateTime       @default(now())
   updatedAt DateTime       @updatedAt
 
-  games        CampaignGame[]
-  participants Participant[]
-  spinPrizes   SpinPrize[]
-  spinResults  SpinResult[]
+  games           CampaignGame[]
+  participants    Participant[]
+  spinPrizes      SpinPrize[]
+  spinResults     SpinResult[]
+  votingQuestions VotingQuestion[]
 }
 
 // Which games are enabled for a campaign, and their per-game config (CMS: "pilih game yang akan dipasang").
@@ -75,6 +76,7 @@ model Participant {
   createdAt    DateTime @default(now())
 
   spinResults SpinResult[]
+  voteEntries VoteEntry[]
 
   @@unique([campaignId, phone])
   @@index([campaignId])
@@ -111,4 +113,45 @@ model SpinResult {
   createdAt     DateTime    @default(now())
 
   @@unique([campaignId, participantId])
+}
+
+// Only one question per campaign is isActive at a time — that's the one shown on videotron/mobile.
+model VotingQuestion {
+  id         String   @id @default(cuid())
+  campaignId String
+  campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  question   String
+  isActive   Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  options VotingOption[]
+  votes   VoteEntry[]
+
+  @@index([campaignId])
+}
+
+model VotingOption {
+  id               String         @id @default(cuid())
+  votingQuestionId String
+  votingQuestion   VotingQuestion @relation(fields: [votingQuestionId], references: [id], onDelete: Cascade)
+  label            String
+  createdAt        DateTime       @default(now())
+
+  votes VoteEntry[]
+
+  @@index([votingQuestionId])
+}
+
+// One vote per participant per question — the de-dup key for "Vote dikirim" not being spammable.
+model VoteEntry {
+  id               String         @id @default(cuid())
+  votingQuestionId String
+  votingQuestion   VotingQuestion @relation(fields: [votingQuestionId], references: [id], onDelete: Cascade)
+  votingOptionId   String
+  votingOption     VotingOption   @relation(fields: [votingOptionId], references: [id], onDelete: Cascade)
+  participantId    String
+  participant      Participant    @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  createdAt        DateTime       @default(now())
+
+  @@unique([votingQuestionId, participantId])
 }

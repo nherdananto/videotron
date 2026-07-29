@@ -66,7 +66,7 @@ export function JoinView({ initialCampaign }: { initialCampaign: PublicCampaign 
       const res = await fetch(`/api/campaigns/${campaign.slug}/join`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, game: "spin-wheel" }),
       });
       const data = await res.json();
       if (!res.ok) {
