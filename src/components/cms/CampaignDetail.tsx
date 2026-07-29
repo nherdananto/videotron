@@ -6,6 +6,8 @@ import { GameActivationCard } from "./GameActivationCard";
 import { VotingManager } from "./VotingManager";
 import { PollingManager } from "./PollingManager";
 import { QuizManager } from "./QuizManager";
+import { TicTacToeManager } from "./TicTacToeManager";
+import { RacingManager } from "./RacingManager";
 import { AnalyticsSummary } from "./AnalyticsSummary";
 
 type Prize = {
@@ -25,6 +27,8 @@ type Campaign = {
   votingActive: boolean;
   pollingActive: boolean;
   quizActive: boolean;
+  ticTacToeActive: boolean;
+  racingActive: boolean;
   prizes: Prize[];
 };
 
@@ -39,6 +43,8 @@ type Analytics = {
   quizAnswerCount: number;
   quizTotalPoints: number;
   quizAccuracy: number | null;
+  ticTacToeMatchCount: number;
+  raceSessionCount: number;
 };
 
 type Result = {
@@ -58,6 +64,8 @@ export function CampaignDetail({
   voting,
   polling,
   quiz,
+  ticTacToe,
+  racing,
   analytics,
 }: {
   campaign: Campaign;
@@ -65,6 +73,8 @@ export function CampaignDetail({
   voting: GameLinks;
   polling: GameLinks;
   quiz: GameLinks;
+  ticTacToe: GameLinks;
+  racing: GameLinks;
   analytics: Analytics;
 }) {
   const router = useRouter();
@@ -181,6 +191,22 @@ export function CampaignDetail({
           videotronUrl={quiz.videotronUrl}
           qrDataUrl={quiz.qrDataUrl}
         />
+        <GameActivationCard
+          gameLabel="Tic Tac Toe"
+          isActive={campaign.ticTacToeActive}
+          onToggle={(checked) => patchCampaign({ ticTacToeActive: checked })}
+          joinUrl={ticTacToe.joinUrl}
+          videotronUrl={ticTacToe.videotronUrl}
+          qrDataUrl={ticTacToe.qrDataUrl}
+        />
+        <GameActivationCard
+          gameLabel="Racing"
+          isActive={campaign.racingActive}
+          onToggle={(checked) => patchCampaign({ racingActive: checked })}
+          joinUrl={racing.joinUrl}
+          videotronUrl={racing.videotronUrl}
+          qrDataUrl={racing.qrDataUrl}
+        />
       </div>
 
       <section className="mb-8">
@@ -262,6 +288,14 @@ export function CampaignDetail({
 
       <div className="mb-8">
         <QuizManager slug={campaign.slug} />
+      </div>
+
+      <div className="mb-8">
+        <TicTacToeManager slug={campaign.slug} />
+      </div>
+
+      <div className="mb-8">
+        <RacingManager slug={campaign.slug} />
       </div>
 
       <section>

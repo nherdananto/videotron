@@ -39,6 +39,19 @@ enum QuizDifficulty {
   HARD
 }
 
+enum TicTacToeStatus {
+  WAITING
+  IN_PROGRESS
+  FINISHED
+}
+
+enum RaceStatus {
+  WAITING
+  COUNTDOWN
+  RUNNING
+  FINISHED
+}
+
 model Campaign {
   id        String         @id @default(cuid())
   slug      String         @unique
@@ -51,13 +64,15 @@ model Campaign {
   createdAt DateTime       @default(now())
   updatedAt DateTime       @updatedAt
 
-  games           CampaignGame[]
-  participants    Participant[]
-  spinPrizes      SpinPrize[]
-  spinResults     SpinResult[]
-  votingQuestions VotingQuestion[]
-  pollSessions    PollSession[]
-  quizQuestions   QuizQuestion[]
+  games            CampaignGame[]
+  participants     Participant[]
+  spinPrizes       SpinPrize[]
+  spinResults      SpinResult[]
+  votingQuestions  VotingQuestion[]
+  pollSessions     PollSession[]
+  quizQuestions    QuizQuestion[]
+  ticTacToeMatches TicTacToeMatch[]
+  raceSessions     RaceSession[]
 }
 
 // Which games are enabled for a campaign, and their per-game config (CMS: "pilih game yang akan dipasang").
@@ -83,10 +98,13 @@ model Participant {
   sessionToken String   @unique
   createdAt    DateTime @default(now())
 
-  spinResults SpinResult[]
-  voteEntries VoteEntry[]
-  pollAnswers PollAnswer[]
-  quizAnswers QuizAnswer[]
+  spinResults        SpinResult[]
+  voteEntries        VoteEntry[]
+  pollAnswers        PollAnswer[]
+  quizAnswers        QuizAnswer[]
+  ticTacToeAsX       TicTacToeMatch[]  @relation("TicTacToePlayerX")
+  ticTacToeAsO       TicTacToeMatch[]  @relation("TicTacToePlayerO")
+  raceParticipations RaceParticipant[]
 
   @@unique([campaignId, phone])
   @@index([campaignId])
@@ -272,4 +290,59 @@ model QuizAnswer {
   createdAt      DateTime     @default(now())
 
   @@unique([quizQuestionId, participantId])
+}
+
+// Only one match per campaign is WAITING/IN_PROGRESS at a time — the one physical
+// videotron can only show one board. "Pairing otomatis": the second joiner takes
+// the open O slot; if none is open, they start a new match as X and wait.
+model TicTacToeMatch {
+  id          String          @id @default(cuid())
+  campaignId  String
+  campaign    Campaign        @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  playerXId   String
+  playerX     Participant     @relation("TicTacToePlayerX", fields: [playerXId], references: [id], onDelete: Cascade)
+  playerOId   String?
+  playerO     Participant?    @relation("TicTacToePlayerO", fields: [playerOId], references: [id], onDelete: Cascade)
+  board       Json
+  currentTurn String          @default("X")
+  status      TicTacToeStatus @default(WAITING)
+  winner      String?
+  createdAt   DateTime        @default(now())
+  finishedAt  DateTime?
+
+  @@index([campaignId])
+}
+
+// Only one session per campaign is WAITING/COUNTDOWN/RUNNING at a time. startedAt
+// anchors the countdown->running transition and endsAt the running->finished one,
+// both computed lazily (no server timers) whenever the session is read or acted on.
+model RaceSession {
+  id              String     @id @default(cuid())
+  campaignId      String
+  campaign        Campaign   @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  trackName       String
+  durationSeconds Int        @default(30)
+  maxPlayers      Int        @default(6)
+  status          RaceStatus @default(WAITING)
+  startedAt       DateTime?
+  endsAt          DateTime?
+  createdAt       DateTime   @default(now())
+
+  participants RaceParticipant[]
+
+  @@index([campaignId])
+}
+
+model RaceParticipant {
+  id            String      @id @default(cuid())
+  raceSessionId String
+  raceSession   RaceSession @relation(fields: [raceSessionId], references: [id], onDelete: Cascade)
+  participantId String
+  participant   Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  progress      Float       @default(0)
+  finishedAt    DateTime?
+  rank          Int?
+  joinedAt      DateTime    @default(now())
+
+  @@unique([raceSessionId, participantId])
 }

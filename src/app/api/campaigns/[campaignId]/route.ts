@@ -32,18 +32,24 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     return NextResponse.json({ error: "Campaign tidak ditemukan" }, { status: 404 });
   }
 
-  const { spinWheelActive, votingActive, pollingActive, quizActive, ...campaignFields } = parsed.data;
+  const { spinWheelActive, votingActive, pollingActive, quizActive, ticTacToeActive, racingActive, ...campaignFields } =
+    parsed.data;
 
   await prisma.campaign.update({
     where: { slug: campaignId },
     data: campaignFields,
   });
 
-  const gameActivations: { gameType: "SPIN_WHEEL" | "VOTING" | "POLLING" | "QUIZ"; isActive?: boolean }[] = [
+  const gameActivations: {
+    gameType: "SPIN_WHEEL" | "VOTING" | "POLLING" | "QUIZ" | "TIC_TAC_TOE" | "RACING";
+    isActive?: boolean;
+  }[] = [
     { gameType: "SPIN_WHEEL", isActive: spinWheelActive },
     { gameType: "VOTING", isActive: votingActive },
     { gameType: "POLLING", isActive: pollingActive },
     { gameType: "QUIZ", isActive: quizActive },
+    { gameType: "TIC_TAC_TOE", isActive: ticTacToeActive },
+    { gameType: "RACING", isActive: racingActive },
   ];
   for (const { gameType, isActive } of gameActivations) {
     if (isActive === undefined) continue;

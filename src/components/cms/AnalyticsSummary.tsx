@@ -7,6 +7,8 @@ type Analytics = {
   quizAnswerCount: number;
   quizTotalPoints: number;
   quizAccuracy: number | null;
+  ticTacToeMatchCount: number;
+  raceSessionCount: number;
 };
 
 function StatTile({ label, value, sub }: { label: string; value: string | number; sub?: string }) {
@@ -23,7 +25,7 @@ export function AnalyticsSummary({ analytics }: { analytics: Analytics }) {
   return (
     <section>
       <h2 className="mb-3 text-lg font-semibold">Analytics</h2>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
         <StatTile label="Total Peserta" value={analytics.participantCount} />
         <StatTile
           label="Spin Wheel"
@@ -38,6 +40,8 @@ export function AnalyticsSummary({ analytics }: { analytics: Analytics }) {
           sub={analytics.quizAccuracy !== null ? `${Math.round(analytics.quizAccuracy * 100)}% benar` : undefined}
         />
         <StatTile label="Total Poin Quiz" value={analytics.quizTotalPoints} />
+        <StatTile label="Match Tic Tac Toe" value={analytics.ticTacToeMatchCount} />
+        <StatTile label="Sesi Racing" value={analytics.raceSessionCount} />
       </div>
     </section>
   );

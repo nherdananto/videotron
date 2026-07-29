@@ -25,6 +25,8 @@ export const updateCampaignSchema = z.object({
   votingActive: z.boolean().optional(),
   pollingActive: z.boolean().optional(),
   quizActive: z.boolean().optional(),
+  ticTacToeActive: z.boolean().optional(),
+  racingActive: z.boolean().optional(),
 });
 
 export const createPrizeSchema = z.object({
@@ -39,7 +41,7 @@ export const createPrizeSchema = z.object({
 export const updatePrizeSchema = createPrizeSchema.partial();
 
 export const joinCampaignSchema = z.object({
-  game: z.enum(["spin-wheel", "voting", "polling", "quiz"]),
+  game: z.enum(["spin-wheel", "voting", "polling", "quiz", "tic-tac-toe", "racing"]),
   name: z.string().min(1).max(120),
   email: z.string().email().optional().nullable(),
   phone: z.string().min(6).max(20),
@@ -94,4 +96,10 @@ export const createQuizQuestionSchema = z
 
 export const setQuizQuestionActiveSchema = z.object({
   isActive: z.boolean(),
+});
+
+export const createRaceSessionSchema = z.object({
+  trackName: z.string().min(1).max(120),
+  durationSeconds: z.number().int().min(10).max(600).default(30),
+  maxPlayers: z.number().int().min(2).max(50).default(6),
 });

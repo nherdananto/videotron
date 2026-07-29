@@ -13,12 +13,13 @@ exhibition, kampus, promosi, dan aktivitas pemasaran.
 
 ## Routing
 
-- `/{namagame}/{campaignId}` — tampilan Videotron (mis. `/spin-wheel/abc12345`, `/voting/abc12345`, `/polling/abc12345`, `/quiz/abc12345`)
+- `/{namagame}/{campaignId}` — tampilan Videotron (mis. `/spin-wheel/abc12345`, `/voting/abc12345`, `/polling/abc12345`, `/quiz/abc12345`, `/tic-tac-toe/abc12345`, `/racing/abc12345`)
 - `/{namagame}/join/{campaignId}` — tampilan mobile untuk visitor (mis. `/spin-wheel/join/abc12345`)
-- `/cms` — dashboard CMS (buat campaign, kelola hadiah/voting/polling/quiz, analytics, pantau hasil live, QR join)
+- `/cms` — dashboard CMS (buat campaign, kelola hadiah/voting/polling/quiz/tic-tac-toe/racing, analytics, pantau hasil live, QR join)
 
-Saat ini `spin-wheel`, `voting`, `polling`, dan `quiz` yang terimplementasi; slug game lain akan
-menampilkan halaman "belum tersedia".
+Seluruh game dari Roadmap Fase 1-3 (`spin-wheel`, `voting`, `polling`, `quiz`, `tic-tac-toe`,
+`racing`) sudah terimplementasi; slug game lain (Instagram Wall) akan menampilkan halaman
+"belum tersedia".
 
 ## Getting Started
 
@@ -49,10 +50,25 @@ SQLite disimpan di named volume `videotron-db` agar persist antar restart. Untuk
 ## Known Gaps (belum diimplementasi)
 
 - Autentikasi & RBAC untuk CMS (saat ini `/cms` open access)
-- Tic Tac Toe, Racing, Instagram Wall (Fase berikutnya sesuai roadmap)
+- Instagram Wall (Fase 4 sesuai roadmap), White Label, multi-event isolation di CMS
 - Audit Log, rate limiting
 
 ## Changelog
+
+### 0.5.0 — 2026-07-29
+
+- feat: Tic Tac Toe end-to-end (Game 5) — pairing otomatis (joiner kedua mengambil slot O terbuka),
+  giliran & deteksi menang/seri server-side, videotron sebagai papan, HP sebagai controller, CMS
+  match history + statistik (menang X/O/seri)
+- feat: Racing Game end-to-end (Game 6) — CMS atur track/durasi/jumlah pemain, lobby join sebelum
+  race dimulai, countdown, HP sebagai tombol akselerasi, ranking real-time, status
+  WAITING→COUNTDOWN→RUNNING→FINISHED dievaluasi lazy dari wall-clock (tanpa server timer)
+- fix: race condition pada progress racing — tap konkuren sebelumnya bisa saling menimpa
+  (lost update) karena read-then-write; diganti dengan atomic `increment` + claim
+  finish-line yang atomic, diverifikasi lewat test tap konkuren
+
+Roadmap Fase 1–3 (Spin Wheel, Voting, Polling, Quiz, Leaderboard, Analytics, Tic Tac Toe, Racing)
+kini lengkap.
 
 ### 0.4.0 — 2026-07-29
 

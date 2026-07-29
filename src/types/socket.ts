@@ -37,6 +37,34 @@ export interface LeaderboardEntryPayload {
   points: number;
 }
 
+export interface TicTacToeMatchPayload {
+  id: string;
+  playerXId: string;
+  playerXName: string;
+  playerOId: string | null;
+  playerOName: string | null;
+  board: (string | null)[];
+  currentTurn: string;
+  status: "WAITING" | "IN_PROGRESS" | "FINISHED";
+  winner: string | null;
+}
+
+export interface RaceStandingPayload {
+  participantId: string;
+  name: string;
+  progress: number;
+  finishedAt: string | null;
+  rank: number | null;
+}
+
+export interface RaceUpdatePayload {
+  sessionId: string;
+  status: "WAITING" | "COUNTDOWN" | "RUNNING" | "FINISHED";
+  startedAt: string | null;
+  endsAt: string | null;
+  standings: RaceStandingPayload[];
+}
+
 export interface ServerToClientEvents {
   "participant:count": (payload: { campaignId: string; count: number }) => void;
   "spin:result": (payload: SpinResultPayload) => void;
@@ -58,6 +86,10 @@ export interface ServerToClientEvents {
   }) => void;
   "quiz:error": (payload: { message: string }) => void;
   "quiz:leaderboard": (payload: { period: "today"; entries: LeaderboardEntryPayload[] }) => void;
+  "tictactoe:update": (payload: TicTacToeMatchPayload) => void;
+  "tictactoe:error": (payload: { message: string }) => void;
+  "racing:update": (payload: RaceUpdatePayload) => void;
+  "racing:error": (payload: { message: string }) => void;
 }
 
 export interface ClientToServerEvents {
@@ -66,4 +98,6 @@ export interface ClientToServerEvents {
   "vote:cast": (payload: { campaignId: string; sessionToken: string; votingOptionId: string }) => void;
   "poll:answer": (payload: { campaignId: string; sessionToken: string; pollOptionId: string }) => void;
   "quiz:answer": (payload: { campaignId: string; sessionToken: string; quizOptionId: string }) => void;
+  "tictactoe:move": (payload: { campaignId: string; sessionToken: string; matchId: string; cellIndex: number }) => void;
+  "racing:accelerate": (payload: { campaignId: string; sessionToken: string; raceSessionId: string }) => void;
 }

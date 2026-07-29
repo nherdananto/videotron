@@ -4,11 +4,15 @@ import {
   getPublicVotingCampaign,
   getPublicPollingCampaign,
   getPublicQuizCampaign,
+  getPublicTicTacToeCampaign,
+  getPublicRacingCampaign,
 } from "@/lib/campaigns";
 import { JoinView as SpinWheelJoinView } from "@/components/spin-wheel/JoinView";
 import { JoinView as VotingJoinView } from "@/components/voting/JoinView";
 import { JoinView as PollingJoinView } from "@/components/polling/JoinView";
 import { JoinView as QuizJoinView } from "@/components/quiz/JoinView";
+import { JoinView as TicTacToeJoinView } from "@/components/tictactoe/JoinView";
+import { JoinView as RacingJoinView } from "@/components/racing/JoinView";
 
 export default async function JoinPage({
   params,
@@ -39,6 +43,18 @@ export default async function JoinPage({
     const campaign = await getPublicQuizCampaign(campaignId);
     if (!campaign) notFound();
     return <QuizJoinView initialCampaign={campaign} />;
+  }
+
+  if (game === "tic-tac-toe") {
+    const campaign = await getPublicTicTacToeCampaign(campaignId);
+    if (!campaign) notFound();
+    return <TicTacToeJoinView initialCampaign={campaign} />;
+  }
+
+  if (game === "racing") {
+    const campaign = await getPublicRacingCampaign(campaignId);
+    if (!campaign) notFound();
+    return <RacingJoinView initialCampaign={campaign} />;
   }
 
   return (

@@ -5,6 +5,8 @@ import { spin, SpinEngineError } from "@/server/spinEngine";
 import { castVote, VotingEngineError } from "@/server/votingEngine";
 import { answerPoll, PollEngineError } from "@/server/pollEngine";
 import { answerQuiz, getLeaderboard, QuizEngineError } from "@/server/quizEngine";
+import { makeMove, toMatchPayload, TicTacToeEngineError } from "@/server/ticTacToeEngine";
+import { accelerate, RacingEngineError } from "@/server/racingEngine";
 import { prisma } from "@/lib/prisma";
 
 type AppServer = Server<ClientToServerEvents, ServerToClientEvents>;
@@ -113,6 +115,45 @@ export function registerSocketHandlers(io: AppServer) {
       } catch (error) {
         const message = error instanceof QuizEngineError ? error.message : "Terjadi kesalahan saat mengirim jawaban";
         socket.emit("quiz:error", { message });
+      }
+    });
+
+    socket.on("tictactoe:move", async ({ campaignId: campaignSlug, sessionToken, matchId, cellIndex }) => {
+      try {
+        const campaign = await prisma.campaign.findUnique({ where: { slug: campaignSlug } });
+        const participant = await prisma.participant.findUnique({ where: { sessionToken } });
+        if (!campaign || !participant || participant.campaignId !== campaign.id) {
+          socket.emit("tictactoe:error", { message: "Sesi tidak valid untuk campaign ini" });
+          return;
+        }
+        const match = await makeMove(campaign.id, participant.id, matchId, cellIndex);
+        io.to(campaignRoomName(campaignSlug)).emit("tictactoe:update", toMatchPayload(match));
+      } catch (error) {
+        const message =
+          error instanceof TicTacToeEngineError ? error.message : "Terjadi kesalahan saat menjalankan langkah";
+        socket.emit("tictactoe:error", { message });
+      }
+    });
+
+    socket.on("racing:accelerate", async ({ campaignId: campaignSlug, sessionToken, raceSessionId }) => {
+      try {
+        const campaign = await prisma.campaign.findUnique({ where: { slug: campaignSlug } });
+        const participant = await prisma.participant.findUnique({ where: { sessionToken } });
+        if (!campaign || !participant || participant.campaignId !== campaign.id) {
+          socket.emit("racing:error", { message: "Sesi tidak valid untuk campaign ini" });
+          return;
+        }
+        const { session, standings } = await accelerate(campaign.id, participant.id, raceSessionId);
+        io.to(campaignRoomName(campaignSlug)).emit("racing:update", {
+          sessionId: session.id,
+          status: session.status,
+          startedAt: session.startedAt?.toISOString() ?? null,
+          endsAt: session.endsAt?.toISOString() ?? null,
+          standings,
+        });
+      } catch (error) {
+        const message = error instanceof RacingEngineError ? error.message : "Terjadi kesalahan saat akselerasi";
+        socket.emit("racing:error", { message });
       }
     });
 
