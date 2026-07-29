@@ -54,20 +54,42 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     });
   }
 
-  // game === "voting"
-  const activeQuestion = await prisma.votingQuestion.findFirst({
+  if (parsed.data.game === "voting") {
+    const activeQuestion = await prisma.votingQuestion.findFirst({
+      where: { campaignId: campaign.id, isActive: true },
+    });
+    const existingVote = activeQuestion
+      ? await prisma.voteEntry.findUnique({
+          where: { votingQuestionId_participantId: { votingQuestionId: activeQuestion.id, participantId: participant.id } },
+        })
+      : null;
+
+    return NextResponse.json({
+      sessionToken: participant.sessionToken,
+      participantId: participant.id,
+      activeQuestionId: activeQuestion?.id ?? null,
+      votedOptionId: existingVote?.votingOptionId ?? null,
+    });
+  }
+
+  // game === "polling"
+  const activeSession = await prisma.pollSession.findFirst({
     where: { campaignId: campaign.id, isActive: true },
+    include: { questions: { orderBy: { order: "asc" } } },
   });
-  const existingVote = activeQuestion
-    ? await prisma.voteEntry.findUnique({
-        where: { votingQuestionId_participantId: { votingQuestionId: activeQuestion.id, participantId: participant.id } },
+  const answers = activeSession
+    ? await prisma.pollAnswer.findMany({
+        where: {
+          participantId: participant.id,
+          pollQuestionId: { in: activeSession.questions.map((q) => q.id) },
+        },
       })
-    : null;
+    : [];
 
   return NextResponse.json({
     sessionToken: participant.sessionToken,
     participantId: participant.id,
-    activeQuestionId: activeQuestion?.id ?? null,
-    votedOptionId: existingVote?.votingOptionId ?? null,
+    activeSessionId: activeSession?.id ?? null,
+    answers: answers.map((a) => ({ pollQuestionId: a.pollQuestionId, pollOptionId: a.pollOptionId })),
   });
 }

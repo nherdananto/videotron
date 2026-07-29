@@ -3,6 +3,7 @@ import type { ClientToServerEvents, ServerToClientEvents } from "../types/socket
 import { campaignRoomName } from "../lib/games.js";
 import { spin, SpinEngineError } from "./spinEngine.js";
 import { castVote, VotingEngineError } from "./votingEngine.js";
+import { answerPoll, PollEngineError } from "./pollEngine.js";
 import { prisma } from "../lib/prisma.js";
 
 type AppServer = Server<ClientToServerEvents, ServerToClientEvents>;
@@ -64,6 +65,27 @@ export function registerSocketHandlers(io: AppServer) {
       } catch (error) {
         const message = error instanceof VotingEngineError ? error.message : "Terjadi kesalahan saat mengirim vote";
         socket.emit("vote:error", { message });
+      }
+    });
+
+    socket.on("poll:answer", async ({ campaignId: campaignSlug, sessionToken, pollOptionId }) => {
+      try {
+        const campaign = await prisma.campaign.findUnique({ where: { slug: campaignSlug } });
+        const participant = await prisma.participant.findUnique({ where: { sessionToken } });
+        if (!campaign || !participant || participant.campaignId !== campaign.id) {
+          socket.emit("poll:error", { message: "Sesi tidak valid untuk campaign ini" });
+          return;
+        }
+        const tally = await answerPoll(campaign.id, participant.id, pollOptionId);
+        socket.emit("poll:accepted", {
+          pollQuestionId: tally.pollQuestionId,
+          pollOptionId,
+          participantId: participant.id,
+        });
+        io.to(campaignRoomName(campaignSlug)).emit("polling:update", tally);
+      } catch (error) {
+        const message = error instanceof PollEngineError ? error.message : "Terjadi kesalahan saat mengirim jawaban";
+        socket.emit("poll:error", { message });
       }
     });
 

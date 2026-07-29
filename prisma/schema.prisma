@@ -50,6 +50,7 @@ model Campaign {
   spinPrizes      SpinPrize[]
   spinResults     SpinResult[]
   votingQuestions VotingQuestion[]
+  pollSessions    PollSession[]
 }
 
 // Which games are enabled for a campaign, and their per-game config (CMS: "pilih game yang akan dipasang").
@@ -77,6 +78,7 @@ model Participant {
 
   spinResults SpinResult[]
   voteEntries VoteEntry[]
+  pollAnswers PollAnswer[]
 
   @@unique([campaignId, phone])
   @@index([campaignId])
@@ -154,4 +156,61 @@ model VoteEntry {
   createdAt        DateTime       @default(now())
 
   @@unique([votingQuestionId, participantId])
+}
+
+// A poll session groups several questions answered together in one sitting
+// ("Polling mendukung beberapa pertanyaan dalam satu sesi"). Only one session
+// per campaign is isActive at a time.
+model PollSession {
+  id         String   @id @default(cuid())
+  campaignId String
+  campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  title      String
+  isActive   Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  questions PollQuestion[]
+
+  @@index([campaignId])
+}
+
+model PollQuestion {
+  id            String      @id @default(cuid())
+  pollSessionId String
+  pollSession   PollSession @relation(fields: [pollSessionId], references: [id], onDelete: Cascade)
+  question      String
+  order         Int         @default(0)
+  createdAt     DateTime    @default(now())
+
+  options PollOption[]
+  answers PollAnswer[]
+
+  @@index([pollSessionId])
+}
+
+model PollOption {
+  id             String       @id @default(cuid())
+  pollQuestionId String
+  pollQuestion   PollQuestion @relation(fields: [pollQuestionId], references: [id], onDelete: Cascade)
+  label          String
+  createdAt      DateTime     @default(now())
+
+  answers PollAnswer[]
+
+  @@index([pollQuestionId])
+}
+
+// One answer per participant per question — a participant works through every
+// question in the active session, unlike Voting's single always-on question.
+model PollAnswer {
+  id             String       @id @default(cuid())
+  pollQuestionId String
+  pollQuestion   PollQuestion @relation(fields: [pollQuestionId], references: [id], onDelete: Cascade)
+  pollOptionId   String
+  pollOption     PollOption   @relation(fields: [pollOptionId], references: [id], onDelete: Cascade)
+  participantId  String
+  participant    Participant  @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+
+  @@unique([pollQuestionId, participantId])
 }

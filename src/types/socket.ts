@@ -17,6 +17,13 @@ export interface VotingTallyPayload {
   totalVotes: number;
 }
 
+export interface PollTallyPayload {
+  pollQuestionId: string;
+  question: string;
+  options: { id: string; label: string; count: number }[];
+  totalVotes: number;
+}
+
 export interface ServerToClientEvents {
   "participant:count": (payload: { campaignId: string; count: number }) => void;
   "spin:result": (payload: SpinResultPayload) => void;
@@ -25,10 +32,14 @@ export interface ServerToClientEvents {
   "voting:update": (payload: VotingTallyPayload) => void;
   "vote:accepted": (payload: { votingQuestionId: string; votingOptionId: string; participantId: string }) => void;
   "vote:error": (payload: { message: string }) => void;
+  "polling:update": (payload: PollTallyPayload) => void;
+  "poll:accepted": (payload: { pollQuestionId: string; pollOptionId: string; participantId: string }) => void;
+  "poll:error": (payload: { message: string }) => void;
 }
 
 export interface ClientToServerEvents {
   "room:join": (payload: { campaignId: string; role: ClientRole }) => void;
   "spin:request": (payload: { campaignId: string; sessionToken: string }) => void;
   "vote:cast": (payload: { campaignId: string; sessionToken: string; votingOptionId: string }) => void;
+  "poll:answer": (payload: { campaignId: string; sessionToken: string; pollOptionId: string }) => void;
 }

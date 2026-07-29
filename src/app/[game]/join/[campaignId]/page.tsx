@@ -1,7 +1,8 @@
 import { notFound } from "next/navigation";
-import { getPublicSpinWheelCampaign, getPublicVotingCampaign } from "@/lib/campaigns";
+import { getPublicSpinWheelCampaign, getPublicVotingCampaign, getPublicPollingCampaign } from "@/lib/campaigns";
 import { JoinView as SpinWheelJoinView } from "@/components/spin-wheel/JoinView";
 import { JoinView as VotingJoinView } from "@/components/voting/JoinView";
+import { JoinView as PollingJoinView } from "@/components/polling/JoinView";
 
 export default async function JoinPage({
   params,
@@ -20,6 +21,12 @@ export default async function JoinPage({
     const campaign = await getPublicVotingCampaign(campaignId);
     if (!campaign) notFound();
     return <VotingJoinView initialCampaign={campaign} />;
+  }
+
+  if (game === "polling") {
+    const campaign = await getPublicPollingCampaign(campaignId);
+    if (!campaign) notFound();
+    return <PollingJoinView initialCampaign={campaign} />;
   }
 
   return (

@@ -32,25 +32,24 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     return NextResponse.json({ error: "Campaign tidak ditemukan" }, { status: 404 });
   }
 
-  const { spinWheelActive, votingActive, ...campaignFields } = parsed.data;
+  const { spinWheelActive, votingActive, pollingActive, ...campaignFields } = parsed.data;
 
   await prisma.campaign.update({
     where: { slug: campaignId },
     data: campaignFields,
   });
 
-  if (spinWheelActive !== undefined) {
+  const gameActivations: { gameType: "SPIN_WHEEL" | "VOTING" | "POLLING"; isActive?: boolean }[] = [
+    { gameType: "SPIN_WHEEL", isActive: spinWheelActive },
+    { gameType: "VOTING", isActive: votingActive },
+    { gameType: "POLLING", isActive: pollingActive },
+  ];
+  for (const { gameType, isActive } of gameActivations) {
+    if (isActive === undefined) continue;
     await prisma.campaignGame.upsert({
-      where: { campaignId_gameType: { campaignId: existing.id, gameType: "SPIN_WHEEL" } },
-      update: { isActive: spinWheelActive },
-      create: { campaignId: existing.id, gameType: "SPIN_WHEEL", isActive: spinWheelActive },
-    });
-  }
-  if (votingActive !== undefined) {
-    await prisma.campaignGame.upsert({
-      where: { campaignId_gameType: { campaignId: existing.id, gameType: "VOTING" } },
-      update: { isActive: votingActive },
-      create: { campaignId: existing.id, gameType: "VOTING", isActive: votingActive },
+      where: { campaignId_gameType: { campaignId: existing.id, gameType } },
+      update: { isActive },
+      create: { campaignId: existing.id, gameType, isActive },
     });
   }
 

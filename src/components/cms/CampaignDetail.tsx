@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { GameActivationCard } from "./GameActivationCard";
 import { VotingManager } from "./VotingManager";
+import { PollingManager } from "./PollingManager";
 
 type Prize = {
   id: string;
@@ -20,6 +21,7 @@ type Campaign = {
   status: "DRAFT" | "ACTIVE" | "ENDED";
   spinWheelActive: boolean;
   votingActive: boolean;
+  pollingActive: boolean;
   prizes: Prize[];
 };
 
@@ -40,10 +42,12 @@ export function CampaignDetail({
   campaign,
   spinWheel,
   voting,
+  polling,
 }: {
   campaign: Campaign;
   spinWheel: GameLinks;
   voting: GameLinks;
+  polling: GameLinks;
 }) {
   const router = useRouter();
   const [results, setResults] = useState<Result[]>([]);
@@ -139,6 +143,14 @@ export function CampaignDetail({
           videotronUrl={voting.videotronUrl}
           qrDataUrl={voting.qrDataUrl}
         />
+        <GameActivationCard
+          gameLabel="Polling"
+          isActive={campaign.pollingActive}
+          onToggle={(checked) => patchCampaign({ pollingActive: checked })}
+          joinUrl={polling.joinUrl}
+          videotronUrl={polling.videotronUrl}
+          qrDataUrl={polling.qrDataUrl}
+        />
       </div>
 
       <section className="mb-8">
@@ -212,6 +224,10 @@ export function CampaignDetail({
 
       <div className="mb-8">
         <VotingManager slug={campaign.slug} />
+      </div>
+
+      <div className="mb-8">
+        <PollingManager slug={campaign.slug} />
       </div>
 
       <section>

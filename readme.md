@@ -13,11 +13,12 @@ exhibition, kampus, promosi, dan aktivitas pemasaran.
 
 ## Routing
 
-- `/{namagame}/{campaignId}` — tampilan Videotron (mis. `/spin-wheel/abc12345`, `/voting/abc12345`)
+- `/{namagame}/{campaignId}` — tampilan Videotron (mis. `/spin-wheel/abc12345`, `/voting/abc12345`, `/polling/abc12345`)
 - `/{namagame}/join/{campaignId}` — tampilan mobile untuk visitor (mis. `/spin-wheel/join/abc12345`)
-- `/cms` — dashboard CMS (buat campaign, kelola hadiah/voting, pantau hasil live, QR join)
+- `/cms` — dashboard CMS (buat campaign, kelola hadiah/voting/polling, pantau hasil live, QR join)
 
-Saat ini `spin-wheel` dan `voting` yang terimplementasi; slug game lain akan menampilkan halaman "belum tersedia".
+Saat ini `spin-wheel`, `voting`, dan `polling` yang terimplementasi; slug game lain akan menampilkan
+halaman "belum tersedia".
 
 ## Getting Started
 
@@ -48,10 +49,17 @@ SQLite disimpan di named volume `videotron-db` agar persist antar restart. Untuk
 ## Known Gaps (belum diimplementasi)
 
 - Autentikasi & RBAC untuk CMS (saat ini `/cms` open access)
-- Polling, Quiz, Tic Tac Toe, Racing, Instagram Wall (Fase berikutnya sesuai roadmap)
+- Quiz, Tic Tac Toe, Racing, Instagram Wall (Fase berikutnya sesuai roadmap)
 - Analytics dashboard, Audit Log, rate limiting
 
 ## Changelog
+
+### 0.3.0 — 2026-07-29
+
+- feat: Live Polling end-to-end (Game 3) — sesi polling dengan banyak pertanyaan sekaligus, peserta
+  menjawab berurutan dalam satu sesi, videotron menampilkan seluruh chart pertanyaan secara live,
+  export CSV seluruh jawaban per sesi
+- feat: generalisasi lebih lanjut pada join API dan activation toggle untuk game ketiga (Polling)
 
 ### 0.2.0 — 2026-07-29
 
