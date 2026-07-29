@@ -2,8 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { nanoid } from "nanoid";
 import { prisma } from "@/lib/prisma";
 import { createCampaignSchema } from "@/lib/validation";
+import { requireCmsUser, requireAdmin } from "@/lib/auth";
 
 export async function GET() {
+  const auth = await requireCmsUser();
+  if (auth instanceof NextResponse) return auth;
+
   const campaigns = await prisma.campaign.findMany({
     orderBy: { createdAt: "desc" },
     include: { games: true, _count: { select: { participants: true, spinResults: true } } },
@@ -12,6 +16,9 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  const auth = await requireAdmin();
+  if (auth instanceof NextResponse) return auth;
+
   const body = await request.json();
   const parsed = createCampaignSchema.safeParse(body);
   if (!parsed.success) {

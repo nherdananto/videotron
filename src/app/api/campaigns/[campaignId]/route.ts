@@ -2,8 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { updateCampaignSchema } from "@/lib/validation";
 import { notifyCampaignUpdated } from "@/lib/realtime";
+import { requireCmsUser } from "@/lib/auth";
 
 export async function GET(_request: NextRequest, { params }: { params: Promise<{ campaignId: string }> }) {
+  const auth = await requireCmsUser();
+  if (auth instanceof NextResponse) return auth;
+
   const { campaignId } = await params;
   const campaign = await prisma.campaign.findUnique({
     where: { slug: campaignId },
@@ -20,6 +24,9 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
 }
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ campaignId: string }> }) {
+  const auth = await requireCmsUser();
+  if (auth instanceof NextResponse) return auth;
+
   const { campaignId } = await params;
   const body = await request.json();
   const parsed = updateCampaignSchema.safeParse(body);

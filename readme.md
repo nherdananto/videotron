@@ -29,9 +29,16 @@ npx prisma migrate dev --name init
 npm run dev
 ```
 
-Buka `http://localhost:3000/cms` untuk membuat campaign, aktifkan game yang diinginkan, dan kelola
-hadiah/pertanyaan voting. Scan/klik join URL dari CMS di satu device (mobile) dan buka videotron URL
-di device lain — keduanya akan sinkron real-time lewat Socket.io.
+Buat admin CMS pertama (sekali saja, baca `.env.example` untuk variabel yang dibutuhkan):
+
+```bash
+npm run db:seed
+```
+
+Login di `http://localhost:3000/cms/login` dengan `ADMIN_EMAIL`/`ADMIN_PASSWORD` dari `.env`, lalu
+buat campaign, aktifkan game yang diinginkan, dan kelola hadiah/pertanyaan voting. Scan/klik join URL
+dari CMS di satu device (mobile) dan buka videotron URL di device lain — keduanya akan sinkron
+real-time lewat Socket.io.
 
 ## Docker
 
@@ -47,13 +54,29 @@ SQLite disimpan di named volume `videotron-db` agar persist antar restart. Untuk
 > daemon tersedia saat dibuat) — jalankan `docker compose up --build` secara lokal untuk verifikasi
 > sebelum dipakai untuk deployment.
 
+## CMS Roles
+
+- **ADMIN** — semua akses termasuk membuat campaign baru dan mengelola User & Role (`/cms/users`)
+- **OPERATOR** — menjalankan campaign yang ada: aktifkan/nonaktifkan game, kelola hadiah/pertanyaan,
+  aktifkan soal/sesi, mulai race, lihat analytics/history. Tidak bisa membuat campaign baru atau
+  mengelola user lain.
+
 ## Known Gaps (belum diimplementasi)
 
-- Autentikasi & RBAC untuk CMS (saat ini `/cms` open access)
 - Instagram Wall (Fase 4 sesuai roadmap), White Label, multi-event isolation di CMS
 - Audit Log, rate limiting
 
 ## Changelog
+
+### 0.6.0 — 2026-07-29
+
+- feat: CMS authentication & RBAC — `CmsUser` model (ADMIN/OPERATOR), login/logout dengan session
+  cookie ber-HMAC (`src/lib/auth.ts`), `/cms` dipindah ke route group ber-guard dengan redirect ke
+  `/cms/login` bila belum login, seluruh API route CMS-only (campaigns/prizes/questions/sessions/
+  results) diproteksi — hanya endpoint publik (join, `*/public`, quiz-leaderboard) yang tetap terbuka
+- feat: halaman User & Role (Admin-only) untuk membuat/menghapus akun CMS
+- feat: `npm run db:seed` membuat admin pertama dari `ADMIN_EMAIL`/`ADMIN_PASSWORD` di `.env`
+- Menutup gap "Autentikasi & RBAC untuk CMS" yang sebelumnya tercatat di Known Gaps
 
 ### 0.5.0 — 2026-07-29
 

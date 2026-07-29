@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireCmsUser } from "@/lib/auth";
 
 function csvEscape(value: string): string {
   if (/[",\n]/.test(value)) {
@@ -12,6 +13,9 @@ export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ campaignId: string; sessionId: string }> }
 ) {
+  const auth = await requireCmsUser();
+  if (auth instanceof NextResponse) return auth;
+
   const { sessionId } = await params;
   const session = await prisma.pollSession.findUnique({ where: { id: sessionId } });
   if (!session) {

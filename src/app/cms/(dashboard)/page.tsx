@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { getSessionUser } from "@/lib/auth";
 import { CreateCampaignForm } from "@/components/cms/CreateCampaignForm";
 
 export const dynamic = "force-dynamic";
 
 export default async function CmsDashboardPage() {
+  const user = await getSessionUser();
   const campaigns = await prisma.campaign.findMany({
     orderBy: { createdAt: "desc" },
     include: { _count: { select: { participants: true, spinResults: true } } },
@@ -14,7 +16,7 @@ export default async function CmsDashboardPage() {
     <main className="mx-auto max-w-4xl px-6 py-10">
       <h1 className="mb-6 text-2xl font-bold">CMS &mdash; Campaign</h1>
 
-      <CreateCampaignForm />
+      {user?.role === "ADMIN" && <CreateCampaignForm />}
 
       <div className="mt-8 flex flex-col gap-3">
         {campaigns.length === 0 && <p className="text-slate-400">Belum ada campaign.</p>}

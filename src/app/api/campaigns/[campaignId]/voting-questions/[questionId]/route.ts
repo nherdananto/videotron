@@ -2,11 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { setVotingQuestionActiveSchema } from "@/lib/validation";
 import { notifyCampaignUpdated } from "@/lib/realtime";
+import { requireCmsUser } from "@/lib/auth";
 
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ campaignId: string; questionId: string }> }
 ) {
+  const auth = await requireCmsUser();
+  if (auth instanceof NextResponse) return auth;
+
   const { campaignId, questionId } = await params;
   const campaign = await prisma.campaign.findUnique({ where: { slug: campaignId } });
   if (!campaign) {
@@ -41,6 +45,9 @@ export async function DELETE(
   _request: NextRequest,
   { params }: { params: Promise<{ campaignId: string; questionId: string }> }
 ) {
+  const auth = await requireCmsUser();
+  if (auth instanceof NextResponse) return auth;
+
   const { campaignId, questionId } = await params;
   await prisma.votingQuestion.delete({ where: { id: questionId } });
   notifyCampaignUpdated(campaignId);

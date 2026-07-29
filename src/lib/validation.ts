@@ -103,3 +103,15 @@ export const createRaceSessionSchema = z.object({
   durationSeconds: z.number().int().min(10).max(600).default(30),
   maxPlayers: z.number().int().min(2).max(50).default(6),
 });
+
+export const loginSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(1),
+});
+
+export const createCmsUserSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(8).max(200),
+  name: z.string().min(1).max(120),
+  role: z.enum(["ADMIN", "OPERATOR"]).default("OPERATOR"),
+});

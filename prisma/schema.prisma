@@ -52,6 +52,21 @@ enum RaceStatus {
   FINISHED
 }
 
+enum CmsRole {
+  ADMIN
+  OPERATOR
+}
+
+// CMS operator/admin accounts — distinct from Participant (event visitors).
+model CmsUser {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         CmsRole  @default(OPERATOR)
+  createdAt    DateTime @default(now())
+}
+
 model Campaign {
   id        String         @id @default(cuid())
   slug      String         @unique

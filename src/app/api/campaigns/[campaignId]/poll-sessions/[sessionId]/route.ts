@@ -2,11 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { setPollSessionActiveSchema } from "@/lib/validation";
 import { notifyCampaignUpdated } from "@/lib/realtime";
+import { requireCmsUser } from "@/lib/auth";
 
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ campaignId: string; sessionId: string }> }
 ) {
+  const auth = await requireCmsUser();
+  if (auth instanceof NextResponse) return auth;
+
   const { campaignId, sessionId } = await params;
   const campaign = await prisma.campaign.findUnique({ where: { slug: campaignId } });
   if (!campaign) {
@@ -41,6 +45,9 @@ export async function DELETE(
   _request: NextRequest,
   { params }: { params: Promise<{ campaignId: string; sessionId: string }> }
 ) {
+  const auth = await requireCmsUser();
+  if (auth instanceof NextResponse) return auth;
+
   const { campaignId, sessionId } = await params;
   await prisma.pollSession.delete({ where: { id: sessionId } });
   notifyCampaignUpdated(campaignId);

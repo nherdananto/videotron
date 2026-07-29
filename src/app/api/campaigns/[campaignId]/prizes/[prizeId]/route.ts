@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { updatePrizeSchema } from "@/lib/validation";
+import { requireCmsUser } from "@/lib/auth";
 
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ campaignId: string; prizeId: string }> }
 ) {
+  const auth = await requireCmsUser();
+  if (auth instanceof NextResponse) return auth;
+
   const { prizeId } = await params;
   const body = await request.json();
   const parsed = updatePrizeSchema.safeParse(body);
@@ -29,6 +33,9 @@ export async function DELETE(
   _request: NextRequest,
   { params }: { params: Promise<{ campaignId: string; prizeId: string }> }
 ) {
+  const auth = await requireCmsUser();
+  if (auth instanceof NextResponse) return auth;
+
   const { prizeId } = await params;
   await prisma.spinPrize.delete({ where: { id: prizeId } });
   return NextResponse.json({ ok: true });

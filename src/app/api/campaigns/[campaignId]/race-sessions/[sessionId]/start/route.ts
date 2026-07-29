@@ -2,11 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { startRace, getStandings, RacingEngineError } from "@/server/racingEngine";
 import { emitToCampaign } from "@/lib/realtime";
+import { requireCmsUser } from "@/lib/auth";
 
 export async function POST(
   _request: NextRequest,
   { params }: { params: Promise<{ campaignId: string; sessionId: string }> }
 ) {
+  const auth = await requireCmsUser();
+  if (auth instanceof NextResponse) return auth;
+
   const { campaignId, sessionId } = await params;
   const campaign = await prisma.campaign.findUnique({ where: { slug: campaignId } });
   if (!campaign) {
