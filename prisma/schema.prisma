@@ -1,0 +1,114 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  // Swap to "postgresql" + DATABASE_URL for staging/production; SQLite keeps local dev dependency-free.
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum CampaignStatus {
+  DRAFT
+  ACTIVE
+  ENDED
+}
+
+enum GameType {
+  SPIN_WHEEL
+  VOTING
+  POLLING
+  QUIZ
+  TIC_TAC_TOE
+  RACING
+  INSTAGRAM_WALL
+}
+
+enum PrizeType {
+  VOUCHER
+  DISKON
+  MERCHANDISE
+  KUPON_BELANJA
+  LUCKY_POINT
+  NO_PRIZE
+}
+
+model Campaign {
+  id        String         @id @default(cuid())
+  slug      String         @unique
+  name      String
+  logoUrl   String?
+  bannerUrl String?
+  startAt   DateTime?
+  endAt     DateTime?
+  status    CampaignStatus @default(DRAFT)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  games        CampaignGame[]
+  participants Participant[]
+  spinPrizes   SpinPrize[]
+  spinResults  SpinResult[]
+}
+
+// Which games are enabled for a campaign, and their per-game config (CMS: "pilih game yang akan dipasang").
+model CampaignGame {
+  id         String   @id @default(cuid())
+  campaignId String
+  campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  gameType   GameType
+  isActive   Boolean  @default(true)
+  config     Json?
+
+  @@unique([campaignId, gameType])
+}
+
+// Identity for a visitor within one campaign. Phone is the de-dup key enforcing "1x main per campaign".
+model Participant {
+  id           String   @id @default(cuid())
+  campaignId   String
+  campaign     Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  name         String
+  email        String?
+  phone        String
+  sessionToken String   @unique
+  createdAt    DateTime @default(now())
+
+  spinResults SpinResult[]
+
+  @@unique([campaignId, phone])
+  @@index([campaignId])
+}
+
+model SpinPrize {
+  id             String    @id @default(cuid())
+  campaignId     String
+  campaign       Campaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  label          String
+  type           PrizeType
+  probability    Float
+  quota          Int?
+  quotaRemaining Int?
+  validFrom      DateTime?
+  validUntil     DateTime?
+  createdAt      DateTime  @default(now())
+
+  spinResults SpinResult[]
+
+  @@index([campaignId])
+}
+
+// One row per participant per campaign — enforces the "maksimal 1 kali bermain" acceptance criterion.
+model SpinResult {
+  id            String      @id @default(cuid())
+  campaignId    String
+  campaign      Campaign    @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  participantId String
+  participant   Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  prizeId       String?
+  prize         SpinPrize?  @relation(fields: [prizeId], references: [id])
+  isWin         Boolean     @default(false)
+  createdAt     DateTime    @default(now())
+
+  @@unique([campaignId, participantId])
+}
